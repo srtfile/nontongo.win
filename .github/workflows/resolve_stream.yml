@@ -1,0 +1,54 @@
+name: Resolve Stream URLs
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Embed/page URL to resolve"
+        required: true
+        default: "https://www.nontongo.win/embed/movie/254"
+      output_json:
+        description: "Output full JSON? (true/false)"
+        required: false
+        default: "false"
+  push:
+    paths:
+      - "stream_resolver.py"
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Resolve streaming URLs
+        run: |
+          URL="${{ github.event.inputs.url || 'https://www.nontongo.win/embed/movie/254' }}"
+          JSON_FLAG=""
+          if [ "${{ github.event.inputs.output_json }}" = "true" ]; then
+            JSON_FLAG="--json"
+          fi
+          python stream_resolver.py --url "$URL" $JSON_FLAG
+
+      - name: Save JSON output (optional artifact)
+        if: ${{ github.event.inputs.output_json == 'true' }}
+        run: |
+          URL="${{ github.event.inputs.url || 'https://www.nontongo.win/embed/movie/254' }}"
+          python stream_resolver.py --url "$URL" --json > resolved_urls.json
+          echo "Saved to resolved_urls.json"
+
+      - name: Upload artifact
+        if: ${{ github.event.inputs.output_json == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: resolved-urls
+          path: resolved_urls.json
+          retention-days: 7
