@@ -1,0 +1,2 @@
+# No third-party dependencies — stdlib only (urllib, http.server, json, etc.)
+# Python 3.9+ required
